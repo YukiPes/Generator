@@ -10,138 +10,192 @@
       -webkit-tap-highlight-color: transparent;
     }
 
-    body {
+    html, body {
       margin: 0;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      font-family: system-ui, -apple-system, sans-serif;
-      background-color: #0f172a;
-      background-image:
-        linear-gradient(rgba(15, 23, 42, 0.58), rgba(15, 23, 42, 0.58)),
-        url("https://40.img.avito.st/image/1/1.DfA-37aAoRkofwMYKIcWxBp_ox2MaKUZjA_AHYzcoLuLfKUDKH8DGIg.NLyDmXAYa8slftj5Bn0c3khp4fM9GANWSU4jpJZpf64");
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      color: #ffffff;
+      background-color: #121212;
+    }
+
+    .bg-layer {
+      position: fixed;
+      inset: 0;
       background-size: cover;
       background-position: center;
       background-repeat: no-repeat;
-      color: #f8fafc;
-      user-select: none;
+      transition: background-image 0.25s ease;
+      z-index: 1;
     }
 
-    .top-menu {
+    .overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.45);
+      z-index: 2;
+    }
+
+    .app {
+      position: relative;
+      z-index: 3;
+      width: 100%;
+      height: 100%;
       display: flex;
+      flex-direction: column;
+      justify-content: space-between;
       align-items: center;
-      justify-content: center;
-      gap: 12px;
-      padding: 16px;
-      background: rgba(30, 41, 59, 0.88);
-      border-bottom: 1px solid rgba(148, 163, 184, 0.25);
+      padding: 24px 18px 28px;
     }
 
-    .field {
+    .range-panel {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      background: rgba(20, 20, 20, 0.72);
+      padding: 10px 16px;
+      border-radius: 16px;
+      backdrop-filter: blur(6px);
+    }
+
+    .range-field {
       display: flex;
       align-items: center;
       gap: 6px;
-      font-size: 16px;
-      color: #e2e8f0;
+      font-size: 15px;
     }
 
-    .field input {
-      width: 92px;
-      padding: 8px 10px;
-      font-size: 18px;
-      font-weight: 600;
-      text-align: center;
-      color: #f8fafc;
-      background: #0f172a;
-      border: 1px solid #475569;
+    .range-field input {
+      width: 78px;
+      padding: 6px 8px;
       border-radius: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.28);
+      background: rgba(0, 0, 0, 0.45);
+      color: #ffffff;
+      font-size: 16px;
+      text-align: center;
     }
 
-    .tap-area {
+    .tap-zone {
       flex: 1;
+      width: 100%;
       display: flex;
       flex-direction: column;
       justify-content: center;
       align-items: center;
-      padding: 24px;
       cursor: pointer;
+      user-select: none;
+      text-align: center;
     }
 
     .number {
-      font-size: 96px;
+      font-size: clamp(72px, 24vw, 150px);
       font-weight: 800;
       line-height: 1;
-      color: #38bdf8;
-      text-shadow: 0 4px 18px rgba(0, 0, 0, 0.75);
+      text-shadow: 0 6px 24px rgba(0, 0, 0, 0.75);
     }
 
     .hint {
-      margin-top: 20px;
+      margin-top: 16px;
       font-size: 15px;
-      color: #e2e8f0;
-      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.8);
+      opacity: 0.9;
+      background: rgba(0, 0, 0, 0.5);
+      padding: 6px 14px;
+      border-radius: 999px;
     }
 
-    .error {
-      margin-top: 14px;
-      font-size: 14px;
-      color: #fca5a5;
-      min-height: 20px;
+    .footer-note {
+      font-size: 12px;
+      opacity: 0.75;
       text-align: center;
-      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.85);
     }
   </style>
 </head>
 <body>
-  <div class="top-menu">
-    <label class="field">
-      <span>От</span>
-      <input id="minInput" type="number" value="1">
-    </label>
-    <label class="field">
-      <span>До</span>
-      <input id="maxInput" type="number" value="100">
-    </label>
-  </div>
+  <div id="bgLayer" class="bg-layer"></div>
+  <div class="overlay"></div>
 
-  <div id="tapArea" class="tap-area" onclick="generateNumber()" ontouchstart="generateNumber()">
-    <div id="result" class="number">—</div>
-    <div class="hint">Тапни по центру экрана</div>
-    <div id="error" class="error"></div>
+  <div class="app">
+    <div class="range-panel">
+      <label class="range-field">
+        От
+        <input id="minInput" type="number" value="1">
+      </label>
+      <label class="range-field">
+        До
+        <input id="maxInput" type="number" value="100">
+      </label>
+    </div>
+
+    <div id="tapZone" class="tap-zone">
+      <div id="numberDisplay" class="number">—</div>
+      <div class="hint">Тапни по центру для нового числа и фона</div>
+    </div>
+
+    <div class="footer-note">Случайный фон из 5 фото репозитория</div>
   </div>
 
   <script>
-    var lastTapTime = 0;
+    const photos = [
+      "Screenshot_20261011_194050_com_hihonor_photos_GalleryMain.jpg",
+      "IMG_20261022_204145.jpg",
+      "IMG_20261017_004006.jpg",
+      "IMG_20261015_220528.jpg",
+      "IMG_20261009_221903_804.jpg"
+    ];
 
-    function generateNumber() {
-      var now = Date.now();
-      if (now - lastTapTime < 150) {
-        return;
+    const bgLayer = document.getElementById("bgLayer");
+    const numberDisplay = document.getElementById("numberDisplay");
+    const minInput = document.getElementById("minInput");
+    const maxInput = document.getElementById("maxInput");
+    const tapZone = document.getElementById("tapZone");
+
+    let lastPhotoIndex = -1;
+
+    // Предзагрузка картинок для более быстрой смены
+    photos.forEach((src) => {
+      const img = new Image();
+      img.src = src;
+    });
+
+    function getRandomPhoto() {
+      if (photos.length === 1) return photos[0];
+      let idx = Math.floor(Math.random() * photos.length);
+      if (idx === lastPhotoIndex) {
+        idx = (idx + 1) % photos.length;
       }
-      lastTapTime = now;
-
-      var minInput = document.getElementById('minInput');
-      var maxInput = document.getElementById('maxInput');
-      var resultEl = document.getElementById('result');
-      var errorEl = document.getElementById('error');
-
-      var min = parseInt(minInput.value, 10);
-      var max = parseInt(maxInput.value, 10);
-
-      if (isNaN(min) || isNaN(max)) {
-        errorEl.textContent = 'Введи оба числа';
-        return;
-      }
-
-      if (min > max) {
-        errorEl.textContent = '«От» должно быть меньше или равно «До»';
-        return;
-      }
-
-      errorEl.textContent = '';
-      var num = Math.floor(Math.random() * (max - min + 1)) + min;
-      resultEl.textContent = String(num);
+      lastPhotoIndex = idx;
+      return photos[idx];
     }
+
+    function generateNumberAndBg() {
+      let minVal = parseInt(minInput.value, 10);
+      let maxVal = parseInt(maxInput.value, 10);
+
+      if (Number.isNaN(minVal)) minVal = 1;
+      if (Number.isNaN(maxVal)) maxVal = 100;
+
+      if (minVal > maxVal) {
+        const temp = minVal;
+        minVal = maxVal;
+        maxVal = temp;
+        minInput.value = minVal;
+        maxInput.value = maxVal;
+      }
+
+      const randomNum = Math.floor(Math.random() * (maxVal - minVal + 1)) + minVal;
+      numberDisplay.textContent = randomNum;
+
+      const nextPhoto = getRandomPhoto();
+      bgLayer.style.backgroundImage = `url("${nextPhoto}")`;
+    }
+
+    tapZone.addEventListener("click", generateNumberAndBg);
+
+    // Первый запуск при открытии страницы
+    generateNumberAndBg();
   </script>
 </body>
 </html>
